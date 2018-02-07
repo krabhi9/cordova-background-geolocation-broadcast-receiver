@@ -2,13 +2,26 @@ package com.transistorsoft.cordova.bggeo;
 
 import com.transistorsoft.locationmanager.adapter.BackgroundGeolocation;
 import com.transistorsoft.locationmanager.logger.TSLog;
-import com.transistorsoft.locationmanager.settings.*;
+import com.truckstop.pangea.qa.R;
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.AsyncTask;
+import android.support.v4.app.NotificationCompat;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Calendar;
+
 
 /**
  * This BroadcastReceiver receives broadcasted events from the BackgroundGeolocation plugin.
@@ -36,191 +49,140 @@ import org.json.JSONObject;
  *
  */
 public class EventReceiver extends BroadcastReceiver {
+    public static String TAG = "TSEventReceiver";
+    private static final String PREFS_NAME = "NativeStorage";
 
     @Override
     public void onReceive(Context context, Intent intent) {
         String eventName = getEventName(intent.getAction());
 
-        String message = TSLog.header("BackgroundGeolocation EventReceiver: " + eventName);
+        String message = TSLog.header("Truckstop: BackgroundGeolocation EventReceiver: " + eventName);
         TSLog.logger.info(message);
 
         // Decode event name
         if (BackgroundGeolocation.EVENT_HEARTBEAT.equalsIgnoreCase(eventName)) {
             onHeartbeat(context, intent);
-        } else if (BackgroundGeolocation.EVENT_MOTIONCHANGE.equalsIgnoreCase(eventName)) {
-            onMotionChange(context, intent);
-        } else if (BackgroundGeolocation.EVENT_LOCATION.equalsIgnoreCase(eventName)) {
-            onLocation(context, intent);
-        } else if (BackgroundGeolocation.EVENT_GEOFENCE.equalsIgnoreCase(eventName)) {
-            onGeofence(context, intent);
-        } else if (BackgroundGeolocation.EVENT_HTTP.equalsIgnoreCase(eventName)) {
-            onHttp(context, intent);
-        } else if (BackgroundGeolocation.EVENT_SCHEDULE.equalsIgnoreCase(eventName)) {
-            onSchedule(context, intent);
-        } else if (BackgroundGeolocation.EVENT_ACTIVITYCHANGE.equalsIgnoreCase(eventName)) {
-            onActivityChange(context, intent);
         } else if (BackgroundGeolocation.EVENT_PROVIDERCHANGE.equalsIgnoreCase(eventName)) {
             onProviderChange(context, intent);
-        } else if (BackgroundGeolocation.EVENT_GEOFENCESCHANGE.equalsIgnoreCase(eventName)) {
-            onGeofencesChange(context, intent);
-        } else if (BackgroundGeolocation.EVENT_BOOT.equalsIgnoreCase(eventName)) {
-            onBoot(context, intent);
-        } else if (BackgroundGeolocation.EVENT_TERMINATE.equalsIgnoreCase(eventName)) {
-            onTerminate(context, intent);
         }
     }
 
     /**
-    * @event heartbeat
-    * @param {Boolean} isMoving
-    * @param {JSONObject} location
-    */
-    private void onHeartbeat(Context context, Intent intent) {
-        try {
-            JSONObject location = new JSONObject(intent.getStringExtra("location"));
-            TSLog.logger.debug(location.toString());
-        } catch (JSONException e) {
-            TSLog.logger.error(TSLog.error(e.getMessage()));
-        }
-    }
-
-    /**
-    * @event motionchange
-    * @param {Boolean} isMoving
-    * @param {JSONObject} location
-    */
-    private void onMotionChange(Context context, Intent intent) {
-        boolean isMoving = intent.getBooleanExtra("isMoving", false);
-        try {
-            JSONObject location = new JSONObject(intent.getStringExtra("location"));
-            TSLog.logger.debug(location.toString());
-        } catch (JSONException e) {
-            TSLog.logger.error(TSLog.error(e.getMessage()));
-        }
-    }
-
-    /**
-    * @event location
-    * @param {JSONObject} location
-    */
-    private void onLocation(Context context, Intent intent) {
-        try {
-            JSONObject location = new JSONObject(intent.getStringExtra("location"));
-            TSLog.logger.debug(location.toString());
-        } catch (JSONException e) {
-            TSLog.logger.error(e.getMessage());
-        }
-    }
-
-     /**
-    * @event geofence
-    * @param {JSONObject} geofence
-    */
-    private void onGeofence(Context context, Intent intent) {
-        try {
-            JSONObject geofenceEvent = new JSONObject(intent.getStringExtra("geofence"));
-            String action = geofenceEvent.getString("action");
-            String identifier = geofenceEvent.getString("identifier");
-            JSONObject location = geofenceEvent.getJSONObject("location");
-            if (geofenceEvent.has("extras")) {
-                JSONObject extras = geofenceEvent.getJSONObject("extras");
-            }
-            TSLog.logger.debug(geofenceEvent.toString());
-        } catch (JSONException e) {
-            TSLog.logger.error(TSLog.error(e.getMessage()));
-        }
-    }
-
-    /**
-    * @event http
-    * @param {Integer} status
-    * @param {String} responseText
-    */
-    private void onHttp(Context context, Intent intent) {
-        String responseText = intent.getStringExtra("responseText");
-        int status = intent.getIntExtra("status", -1);
-        TSLog.logger.debug("status: " + status + ", " + responseText);
-    }
-
-    /**
-    * @event schedule
-    * @param {JSONObject} state
-    */
-    private void onSchedule(Context context, Intent intent) {
-        try {
-            JSONObject state = new JSONObject(intent.getStringExtra("state"));
-            TSLog.logger.debug(state.toString());
-        } catch (JSONException e) {
-            TSLog.logger.error(TSLog.error(e.getMessage()));
-        }
-    }
-
-    /**
-    * @event activitychange
-    * @param {String} activity
-    */
-    private void onActivityChange(Context context, Intent intent) {
-        String activityName = intent.getStringExtra("activity");
-        Integer confidence = intent.getIntExtra("confidence", -1);
-        TSLog.logger.debug(activityName + " " + confidence + "%");
-    }
-
-    /**
-    * @event providerchange
-    * @param {String} activityName
-    */
-    private void onProviderChange(Context context, Intent intent) {
-        try {
-            JSONObject provider = new JSONObject(intent.getStringExtra("provider"));
-            TSLog.logger.debug(provider.toString());
-        } catch (JSONException e) {
-            TSLog.logger.error(TSLog.error(e.getMessage()));
-        }
-    }
-
-    /**
-    * @event geofenceschange
-    * @param {JSONArray} on
-    * @param {JSONArray} off
-    */
-    private void onGeofencesChange(Context context, Intent intent) {
-        TSLog.logger.debug("geofenceschange: " + intent.getExtras());
-        try {
-            JSONObject event = new JSONObject(intent.getStringExtra("geofenceschange"));
-            JSONArray on = event.getJSONArray("on");
-            JSONArray off = event.getJSONArray("off");
-            TSLog.logger.debug("on: " + on.toString() + "\noff:" + off.toString());
-        } catch (JSONException e) {
-            TSLog.logger.error(TSLog.error(e.getMessage()));
-        }
-    }
-
-    /**
-    * @event boot
-    * @param {JSONObject} state
-    */
-    private void onBoot(Context context, Intent intent) {
-        BackgroundGeolocation adapter = BackgroundGeolocation.getInstance(context, intent);
-        JSONObject state = adapter.getState();
-    }
-
-    /**
-    * @event terminate
-    * @param {JSONObject} state
-    */
-    private void onTerminate(Context context, Intent intent) {
-        BackgroundGeolocation adapter = BackgroundGeolocation.getInstance(context, intent);
-        JSONObject state = adapter.getState();
-    }
-
-    /**
-    * Fetch the last portion of the Intent action foo.bar.EVENT_NAME -> event_name
-    * @param {String} action
-    * @return {string} eventName
-    */
+     * Fetch the last portion of the Intent action foo.bar.EVENT_NAME -> event_name
+     * @param {String} action
+     * @return {string} eventName
+     */
     private String getEventName(String action) {
         String[] path = action.split("\\.");
         return path[path.length-1].toLowerCase();
     }
-}
 
+    /**
+     * @event heartbeat
+     * @param {Boolean} isMoving
+     * @param {JSONObject} location
+     */
+    private void onHeartbeat(Context context, Intent intent) {
+        try {
+            JSONObject location = new JSONObject(intent.getStringExtra("location"));
+            String data = location.toString(); ;
+            data = "{\"locations\": [".concat(data).concat("]}");
+            new TruckstopHttpApi()
+                    .execute(getSharedPreferenceValue(context.getSharedPreferences("HeartbeatApiURL", context.MODE_PRIVATE), data));
+        } catch (JSONException e) {
+            TSLog.logger.error(TSLog.error(e.getMessage()));
+        }
+    }
+
+    /**
+     * @event providerchange
+     * @param {String} activityName
+     */
+    private void onProviderChange(Context context, Intent intent) {
+        try {
+            JSONObject provider = new JSONObject(intent.getStringExtra("provider"));
+            TSLog.logger.debug("Truckstop Mobile Provider: "+provider.toString());
+            String data = provider.toString();
+            Calendar c = Calendar.getInstance();
+            data = data.substring(0,data.length()-1)
+                    .concat(",\"userAccount\":"+getSharedPreferenceValue(context.getSharedPreferences("NativeStorage",
+                            context.MODE_PRIVATE),"userId"))
+                    .concat(",\"deviceId\":"+getSharedPreferenceValue(context.getSharedPreferences("NativeStorage",
+                            context.MODE_PRIVATE),"X-DeviceID"))
+                    .concat(",\"deviceTimestamp\":\"\\/Date("+c.getTimeInMillis()+")\\/\"")
+                    .concat("}");
+            new TruckstopHttpApi()
+                    .execute(getSharedPreferenceValue(context.getSharedPreferences("ProviderApiURL", context.MODE_PRIVATE), data));
+
+            if(provider.getBoolean("network") || provider.getBoolean("gps")) {
+                sendNotification(context, "Location services should be enabled for load tracking");
+            }
+        } catch (JSONException e) {
+            TSLog.logger.error(TSLog.error(e.getMessage()));
+        }
+    }
+
+    private void sendNotification(Context context, String notificationText) {
+        NotificationCompat.Builder mBuilder =
+                new NotificationCompat.Builder(context)
+                        .setSmallIcon(R.drawable.common_full_open_on_phone)
+                        .setContentTitle("Truckstop Mobile")
+                        .setContentText(notificationText);
+
+        NotificationManager mNotificationManager =
+                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager.notify(001, mBuilder.build());
+    }
+
+    public class TruckstopHttpApi extends AsyncTask<String, Void, Integer> {
+
+        public TruckstopHttpApi(){
+            //set context variables if required
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+
+        @Override
+        protected Integer doInBackground(String... params) {
+            String urlString = params[0]; // URL to call
+            String data = params[1]; //data to post
+            TSLog.logger.debug("Truckstop HTTP request:"+ urlString+":"+data);
+            OutputStream out = null;
+            int responseCode = 0;
+            try {
+                URL url = new URL(urlString);
+                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.setRequestMethod("POST");
+                urlConnection.setRequestProperty("Content-Type", "application/json");
+                urlConnection.setDoInput(true);
+                urlConnection.setDoOutput(true);
+                out = new BufferedOutputStream(urlConnection.getOutputStream());
+                BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(out, "UTF-8"));
+                writer.write(data);
+                writer.flush();
+                writer.close();
+                out.close();
+                urlConnection.connect();
+                responseCode =  urlConnection.getResponseCode();
+                urlConnection.disconnect();
+                TSLog.logger.debug("Truckstop HTTP response:"+ urlConnection.getResponseMessage());
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
+            return responseCode;
+        }
+
+        @Override
+        protected void onPostExecute(Integer responseCode) {
+            super.onPostExecute(responseCode);
+        }
+    }
+
+    private String getSharedPreferenceValue(SharedPreferences sharedPreferences, String id) {
+        return sharedPreferences.getString(id, "Not working!");
+    }
+}
