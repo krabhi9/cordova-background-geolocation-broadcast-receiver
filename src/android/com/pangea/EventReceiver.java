@@ -1,4 +1,4 @@
-package com.krabhi;
+package com.pangea;
 
 import com.transistorsoft.locationmanager.adapter.BackgroundGeolocation;
 import com.transistorsoft.locationmanager.logger.TSLog;
