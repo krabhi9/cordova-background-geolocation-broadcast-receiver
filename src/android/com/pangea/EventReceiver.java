@@ -121,7 +121,7 @@ public class EventReceiver extends BroadcastReceiver {
               }
             }
 
-            if(provider.getBoolean("network") || provider.getBoolean("gps")) {
+            if(!provider.getBoolean("network") && !provider.getBoolean("gps")) {
                 sendNotification(context, getSharedPreferenceValue(context.getSharedPreferences(PREFS_NAME,
                 context.MODE_PRIVATE),"ProviderMessage"));
             }
