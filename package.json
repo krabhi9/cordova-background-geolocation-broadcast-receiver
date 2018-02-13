@@ -6,11 +6,11 @@
     "id": "cordova-background-geolocation-broadcast-receiver",
     "platforms": [
       "android"
-    ]
+    ] 
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/transistorsoft/cordova-background-geolocation-broadcast-receiver"
+    "url": "https://github.com/krabhi9/cordova-background-geolocation-broadcast-receiver"
   },
   "keywords": [
     "gps",
